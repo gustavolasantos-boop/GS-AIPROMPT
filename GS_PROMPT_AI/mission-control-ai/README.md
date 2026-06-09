@@ -221,7 +221,7 @@ Priorização automática de downlink.
 🎥 Link da apresentação:
 
 ```text
-https://www.youtube.com/watch?v=SEU_VIDEO_AQUI
+(https://www.youtube.com/watch?v=sXNsWkDkpaA)
 ```
 
 ---
