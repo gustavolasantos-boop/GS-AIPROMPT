@@ -120,7 +120,9 @@ python main.py
 
 ### Exemplo de Alerta
 
-![Alerta](assets/screenshot_alerta.png)
+### Análise de Telemetria em Estado de Alerta
+
+![Análise de Alerta](assets/screenshot_alerta.png)
 --- 
 
 ## System Prompt
