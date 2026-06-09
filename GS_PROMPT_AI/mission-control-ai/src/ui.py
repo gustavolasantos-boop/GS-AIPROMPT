@@ -20,26 +20,48 @@ session = PromptSession(
 
 
 def show_banner():
-    """Exibe banner ASCII colorido no início."""
+    """Banner personalizado da Global Solution 2026.1."""
 
-    banner = pyfiglet.figlet_format(
-        "Mission Control",
+    titulo1 = pyfiglet.figlet_format(
+        "Global Solution",
+        font="ansi_shadow"
+    )
+
+    titulo2 = pyfiglet.figlet_format(
+        "Mission Control AI",
         font="ansi_shadow"
     )
 
     console.print(
         Text(
-            banner,
+            titulo1,
+            style="bold #A855F7"
+        )
+    )
+
+    console.print(
+        Text(
+            titulo2,
             style="bold #06B6D4"
         )
     )
 
     console.print(
+        Text(
+            "🌾 TRILHA 1 — AGROSAT (Sensoriamento Agrícola)",
+            style="bold green"
+        )
+    )
+
+    console.print(
         Panel.fit(
-            "Sistema de monitoramento e análise por IA generativa.\n"
-            "Use /help para ver os comandos · /exit para sair.\n"
-            "Modelo: gpt-oss:120b via Ollama Cloud",
-            title="◆ MISSION CONTROL",
+            "[bold]Monitoramento inteligente de satélite multiespectral[/bold]\n\n"
+            "🚜 Produtores Rurais\n"
+            "📈 Seguro Agrícola\n"
+            "🌱 Monitoramento de Safras\n"
+            "🛰️ Dados Orbitais + IA Generativa\n\n"
+            "Comandos: /help  /status  /clear  /exit",
+            title="◆ GLOBAL SOLUTION 2026.1",
             border_style="#06B6D4"
         )
     )
