@@ -1,22 +1,11 @@
 # Dependências mínimas — fixem as versões para reprodutibilidade
 ollama =0.4.7
 python-dotenv =1.0.1
-# Opcional, dependendo do que vocês implementarem:
-# rich =13.9.4 (terminal bonito)
 # pandas =2.2.3 (manipulação de dados)
 # matplotlib =3.9.2 (gráficos)
-Rich 15.0.0
-Renderização de painéis com bordas, tabelas, markdown, syntax highlighting e
-spinners no terminal. É a biblioteca por trás dos painéis bonitos que vocês
-veem no Claude Code.
-prompttoolkit
-3.0.52
-Input editável com histórico (setas ↑↓), auto-completar, multilinha e estilização
-do cursor. É o que dá o "feel" de CLI moderna.
-PyFiglet 1.0.4
-Gera o banner em ASCII art da frase "Mission ControlAI". Inclui mais de 570
-fontes prontas.
-pythondotenv
-1.2.2 Carrega a chave Ollama do arquivo .env sem deixar credenciais hardcoded.
+Rich 15.0.0 Renderização de painéis com bordas, tabelas, markdown, syntax highlighting espinners no terminal. É a biblioteca por trás dos painéis bonitos que vocêsveem no Claude Code.
+prompttoolkit3.0.52 Input editável com histórico (setas ↑↓), auto-completar, multilinha e estilização do cursor. É o que dá o "feel" de CLI moderna.
+PyFiglet 1.0.4 Gera o banner em ASCII art da frase "Mission ControlAI". Inclui mais de 570 fontes prontas.
+pythondotenv1.2.2 Carrega a chave Ollama do arquivo .env sem deixar credenciais hardcoded.
 ollama 0.6.2 Cliente oficial Python para Ollama Cloud — modelo gpt-oss:120b .
 
