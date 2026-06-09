@@ -1,169 +1,220 @@
 """
-src/telemetria.py — Geração de dados simulados de telemetria
-Trilha: AgroSat · Satélite Multiespectral (similar a CBERS-4A / Planet Labs)
+src/alertas.py — Thresholds, regras de decisão e respostas automatizadas
+Trilha: AgroSat · Satélite Multiespectral
 
-Parâmetros monitorados:
-  1. saude_ndvi        — Saúde do sensor multiespectral (índice NDVI 0.0–1.0)
-  2. temperatura_payload — Temperatura do payload óptico (°C)
-  3. armazenamento      — Capacidade de armazenamento usada (%)
-  4. janela_downlink    — Tempo restante para próxima janela de downlink (min)
-  5. estabilidade_atitude — Desvio de atitude em arco-segundos (menor = melhor)
-  6. energia_disponivel — Nível de energia dos painéis solares (%)
+A lógica de decisão é implementada em Python puro (não no prompt da IA).
+A IA recebe os alertas já processados para contextualizar o impacto terrestre.
 """
 
-import random
-import time
-from datetime import datetime
+from src.telemetria import LIMITES
+
+# ─────────────────────────────────────────────
+#  Níveis de severidade
+# ─────────────────────────────────────────────
+NORMAL   = "NORMAL"
+ALERTA   = "ALERTA"
+CRITICO  = "CRÍTICO"
 
 
 # ─────────────────────────────────────────────
-#  Thresholds de operação normal (limites seguros)
-# ─────────────────────────────────────────────
-LIMITES = {
-    "saude_ndvi": {
-        "min": 0.85,   # sensor degradado abaixo disso
-        "critico": 0.60
-    },
-    "temperatura_payload": {
-        "max": 35.0,   # °C — acima disso o sensor aquece demais
-        "critico": 45.0
-    },
-    "armazenamento": {
-        "max": 80.0,   # % — acima disso precisa de downlink urgente
-        "critico": 95.0
-    },
-    "janela_downlink": {
-        "min": 10.0,   # minutos — abaixo disso downlink iminente
-        "critico": 2.0
-    },
-    "estabilidade_atitude": {
-        "max": 5.0,    # arco-segundos — acima disso imagens ficam borradas
-        "critico": 15.0
-    },
-    "energia_disponivel": {
-        "min": 30.0,   # % — abaixo disso modo economia ativo
-        "critico": 15.0
-    }
-}
-
-
-def _valor_normal():
-    """Retorna um conjunto de valores dentro dos limites normais."""
-    return {
-        "saude_ndvi": round(random.uniform(0.88, 0.99), 3),
-        "temperatura_payload": round(random.uniform(18.0, 30.0), 1),
-        "armazenamento": round(random.uniform(20.0, 65.0), 1),
-        "janela_downlink": round(random.uniform(15.0, 90.0), 1),
-        "estabilidade_atitude": round(random.uniform(0.5, 3.5), 2),
-        "energia_disponivel": round(random.uniform(55.0, 90.0), 1),
-    }
-
-
-def _valor_alerta():
-    """Retorna um conjunto com pelo menos um parâmetro em estado de alerta."""
-    dados = _valor_normal()
-    # Escolhe aleatoriamente 1 a 2 parâmetros para colocar em alerta
-    parametros_em_alerta = random.sample(list(LIMITES.keys()), k=random.randint(1, 2))
-    for param in parametros_em_alerta:
-        if param == "saude_ndvi":
-            dados[param] = round(random.uniform(0.61, 0.84), 3)
-        elif param == "temperatura_payload":
-            dados[param] = round(random.uniform(36.0, 44.0), 1)
-        elif param == "armazenamento":
-            dados[param] = round(random.uniform(81.0, 94.0), 1)
-        elif param == "janela_downlink":
-            dados[param] = round(random.uniform(3.0, 9.9), 1)
-        elif param == "estabilidade_atitude":
-            dados[param] = round(random.uniform(5.1, 14.9), 2)
-        elif param == "energia_disponivel":
-            dados[param] = round(random.uniform(16.0, 29.9), 1)
-    return dados
-
-
-def _valor_critico():
-    """Retorna um conjunto com pelo menos um parâmetro em estado crítico."""
-    dados = _valor_normal()
-    param_critico = random.choice(list(LIMITES.keys()))
-    if param_critico == "saude_ndvi":
-        dados[param_critico] = round(random.uniform(0.30, 0.59), 3)
-    elif param_critico == "temperatura_payload":
-        dados[param_critico] = round(random.uniform(45.1, 65.0), 1)
-    elif param_critico == "armazenamento":
-        dados[param_critico] = round(random.uniform(95.1, 99.9), 1)
-    elif param_critico == "janela_downlink":
-        dados[param_critico] = round(random.uniform(0.1, 1.9), 1)
-    elif param_critico == "estabilidade_atitude":
-        dados[param_critico] = round(random.uniform(15.1, 40.0), 2)
-    elif param_critico == "energia_disponivel":
-        dados[param_critico] = round(random.uniform(5.0, 14.9), 1)
-    return dados
-
-
-# ─────────────────────────────────────────────
-#  Função principal de coleta
+#  Avaliação individual de cada parâmetro
 # ─────────────────────────────────────────────
 
-# Contador de ciclos para simular variação temporal
-_ciclo = 0
+def _avaliar_saude_ndvi(valor: float) -> tuple[str, str]:
+    """Avalia o sensor multiespectral (NDVI)."""
+    if valor < LIMITES["saude_ndvi"]["critico"]:
+        return CRITICO, (
+            f"Sensor NDVI em estado CRÍTICO ({valor:.3f}). "
+            "Degradação severa compromete geração de imagens multiespectrais. "
+            "Produtores rurais perdem acesso a dados de NDVI para monitoramento de safra."
+        )
+    elif valor < LIMITES["saude_ndvi"]["min"]:
+        return ALERTA, (
+            f"Sensor NDVI com desempenho reduzido ({valor:.3f}). "
+            "Imagens podem apresentar ruído — precisão dos índices vegetativos afetada."
+        )
+    return NORMAL, f"Sensor NDVI operacional ({valor:.3f})."
 
-def coletar(modo: str = "auto") -> dict:
+
+def _avaliar_temperatura_payload(valor: float) -> tuple[str, str]:
+    """Avalia a temperatura do payload óptico."""
+    if valor > LIMITES["temperatura_payload"]["critico"]:
+        return CRITICO, (
+            f"Temperatura do payload CRÍTICA ({valor:.1f}°C). "
+            "Risco de dano permanente ao sensor óptico. "
+            "Modo de proteção térmica ativado automaticamente — câmeras desligadas."
+        )
+    elif valor > LIMITES["temperatura_payload"]["max"]:
+        return ALERTA, (
+            f"Temperatura do payload elevada ({valor:.1f}°C). "
+            "Qualidade de imagem pode ser afetada por expansão térmica dos espelhos."
+        )
+    return NORMAL, f"Temperatura do payload dentro do nominal ({valor:.1f}°C)."
+
+
+def _avaliar_armazenamento(valor: float) -> tuple[str, str]:
+    """Avalia a capacidade de armazenamento."""
+    if valor > LIMITES["armazenamento"]["critico"]:
+        return CRITICO, (
+            f"Armazenamento CRÍTICO ({valor:.1f}%). "
+            "Buffer de imagens quase cheio — capturas novas serão descartadas. "
+            "Downlink prioritário deve ser iniciado imediatamente."
+        )
+    elif valor > LIMITES["armazenamento"]["max"]:
+        return ALERTA, (
+            f"Armazenamento alto ({valor:.1f}%). "
+            "Recomenda-se priorizar downlink na próxima janela disponível."
+        )
+    return NORMAL, f"Armazenamento dentro do normal ({valor:.1f}%)."
+
+
+def _avaliar_janela_downlink(valor: float) -> tuple[str, str]:
+    """Avalia o tempo restante para a janela de downlink."""
+    if valor < LIMITES["janela_downlink"]["critico"]:
+        return CRITICO, (
+            f"Janela de downlink IMINENTE ({valor:.1f} min). "
+            "Iniciar protocolo de transmissão imediatamente para não perder a janela."
+        )
+    elif valor < LIMITES["janela_downlink"]["min"]:
+        return ALERTA, (
+            f"Janela de downlink se aproximando ({valor:.1f} min). "
+            "Preparar fila de transmissão prioritária."
+        )
+    return NORMAL, f"Próxima janela de downlink em {valor:.1f} min."
+
+
+def _avaliar_estabilidade_atitude(valor: float) -> tuple[str, str]:
+    """Avalia a estabilidade de atitude do satélite."""
+    if valor > LIMITES["estabilidade_atitude"]["critico"]:
+        return CRITICO, (
+            f"Instabilidade de atitude CRÍTICA ({valor:.2f} arco-s). "
+            "Imagens produzidas são inutilizáveis — desfoque severo. "
+            "Sistema de controle de atitude (ADCS) necessita de recalibração urgente."
+        )
+    elif valor > LIMITES["estabilidade_atitude"]["max"]:
+        return ALERTA, (
+            f"Instabilidade de atitude detectada ({valor:.2f} arco-s). "
+            "Resolução espacial das imagens degradada — imagens agrícolas de menor precisão."
+        )
+    return NORMAL, f"Atitude estável ({valor:.2f} arco-s)."
+
+
+def _avaliar_energia(valor: float) -> tuple[str, str]:
+    """Avalia o nível de energia disponível."""
+    if valor < LIMITES["energia_disponivel"]["critico"]:
+        return CRITICO, (
+            f"Energia CRÍTICA ({valor:.1f}%). "
+            "Modo de economia de energia ativado automaticamente. "
+            "Sensores e transmissores não essenciais desligados para preservar sistemas vitais."
+        )
+    elif valor < LIMITES["energia_disponivel"]["min"]:
+        return ALERTA, (
+            f"Energia abaixo do ideal ({valor:.1f}%). "
+            "Reduzir operações de alta demanda energética. Verificar painéis solares."
+        )
+    return NORMAL, f"Energia disponível adequada ({valor:.1f}%)."
+
+
+# ─────────────────────────────────────────────
+#  Respostas automatizadas para situações críticas
+# ─────────────────────────────────────────────
+
+def _resposta_automatizada(alertas_criticos: list[str]) -> list[str]:
     """
-    Coleta dados simulados da telemetria do AgroSat.
+    Gera ações automatizadas com base nos alertas críticos identificados.
+    Estas ações são executadas automaticamente pelo sistema de controle.
+    """
+    acoes = []
 
-    Parâmetros:
-        modo: "auto"    — alterna entre normal/alerta/critico ao longo dos ciclos
-              "normal"  — sempre retorna valores normais
-              "alerta"  — sempre retorna valores em alerta
-              "critico" — sempre retorna valores críticos
+    if "temperatura_payload" in alertas_criticos:
+        acoes.append("🔴 [AUTO] Payload óptico desligado — modo proteção térmica ativo.")
+
+    if "energia_disponivel" in alertas_criticos:
+        acoes.append("🔴 [AUTO] Modo economia de energia ativado — sensores secundários offline.")
+
+    if "armazenamento" in alertas_criticos:
+        acoes.append("🟠 [AUTO] Fila de downlink priorizada — transmissão iniciada na próxima janela.")
+
+    if "estabilidade_atitude" in alertas_criticos:
+        acoes.append("🔴 [AUTO] Captura de imagens suspensa — recalibração do ADCS em andamento.")
+
+    if "saude_ndvi" in alertas_criticos:
+        acoes.append("🔴 [AUTO] Alerta enviado à equipe técnica — diagnóstico do sensor multiespectral necessário.")
+
+    if "janela_downlink" in alertas_criticos:
+        acoes.append("🟠 [AUTO] Protocolo de transmissão prioritária iniciado.")
+
+    return acoes
+
+
+# ─────────────────────────────────────────────
+#  Função principal de avaliação
+# ─────────────────────────────────────────────
+
+def avaliar(dados: dict) -> dict:
+    """
+    Avalia os dados de telemetria e retorna um relatório de alertas.
 
     Retorna:
-        dict com os 6 parâmetros de telemetria + metadados (timestamp, orbita, modo)
+        dict com:
+          - 'detalhes'       : lista de dicts {parametro, nivel, mensagem}
+          - 'nivel_geral'    : nível geral da missão (NORMAL / ALERTA / CRÍTICO)
+          - 'resumo_texto'   : string formatada para exibição
+          - 'acoes_auto'     : lista de ações automatizadas disparadas
+          - 'criticos'       : lista de parâmetros em estado crítico
+          - 'em_alerta'      : lista de parâmetros em estado de alerta
     """
-    global _ciclo
-    _ciclo += 1
+    avaliacoes = {
+        "saude_ndvi":          _avaliar_saude_ndvi(dados["saude_ndvi"]),
+        "temperatura_payload": _avaliar_temperatura_payload(dados["temperatura_payload"]),
+        "armazenamento":       _avaliar_armazenamento(dados["armazenamento"]),
+        "janela_downlink":     _avaliar_janela_downlink(dados["janela_downlink"]),
+        "estabilidade_atitude":_avaliar_estabilidade_atitude(dados["estabilidade_atitude"]),
+        "energia_disponivel":  _avaliar_energia(dados["energia_disponivel"]),
+    }
 
-    # Modo automático: simula ciclos variados para demonstração
-    if modo == "auto":
-        # Ciclo 1-4: normal, Ciclo 5-6: alerta, Ciclo 7: critico, repete
-        fase = _ciclo % 7
-        if fase in (0, 5):
-            dados = _valor_alerta()
-        elif fase == 6:
-            dados = _valor_critico()
-        else:
-            dados = _valor_normal()
-    elif modo == "normal":
-        dados = _valor_normal()
-    elif modo == "alerta":
-        dados = _valor_alerta()
-    elif modo == "critico":
-        dados = _valor_critico()
+    detalhes = []
+    criticos = []
+    em_alerta = []
+
+    for param, (nivel, mensagem) in avaliacoes.items():
+        detalhes.append({"parametro": param, "nivel": nivel, "mensagem": mensagem})
+        if nivel == CRITICO:
+            criticos.append(param)
+        elif nivel == ALERTA:
+            em_alerta.append(param)
+
+    # Nível geral: pior caso
+    if criticos:
+        nivel_geral = CRITICO
+    elif em_alerta:
+        nivel_geral = ALERTA
     else:
-        dados = _valor_normal()
+        nivel_geral = NORMAL
 
-    # Adiciona metadados da missão
-    dados["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    dados["orbita"] = 14230 + _ciclo          # número de órbita simulado
-    dados["altitude_km"] = 615                 # órbita baixa (LEO), estilo CBERS-4A
-    dados["ciclo"] = _ciclo
-    dados["modo_simulacao"] = modo
+    # Ações automatizadas
+    acoes_auto = _resposta_automatizada(criticos)
 
-    return dados
-
-
-def formatar_resumo(dados: dict) -> str:
-    """
-    Formata os dados de telemetria em texto legível para exibição no terminal.
-    """
-    linhas = [
-        f"📡 AgroSat · Órbita #{dados['orbita']} · {dados['timestamp']}",
-        f"🛰  Altitude: {dados['altitude_km']} km (LEO)",
-        "",
-        f"  🌿 Saúde NDVI (sensor multiespectral) : {dados['saude_ndvi']:.3f}",
-        f"  🌡  Temperatura do payload óptico      : {dados['temperatura_payload']:.1f} °C",
-        f"  💾  Armazenamento usado                : {dados['armazenamento']:.1f} %",
-        f"  📶  Próxima janela de downlink          : {dados['janela_downlink']:.1f} min",
-        f"  🎯  Estabilidade de atitude             : {dados['estabilidade_atitude']:.2f} arco-s",
-        f"  ⚡  Energia disponível (painéis solares): {dados['energia_disponivel']:.1f} %",
+    # Resumo textual
+    icone = {"NORMAL": "✅", "ALERTA": "⚠️", "CRÍTICO": "🚨"}[nivel_geral]
+    linhas_resumo = [
+        f"{icone} STATUS GERAL DA MISSÃO: {nivel_geral}",
     ]
-    return "\n".join(linhas)
+    for d in detalhes:
+        prefixo = {"NORMAL": "  ✅", "ALERTA": "  ⚠️ ", "CRÍTICO": "  🚨"}[d["nivel"]]
+        linhas_resumo.append(f"{prefixo} {d['mensagem']}")
+
+    if acoes_auto:
+        linhas_resumo.append("")
+        linhas_resumo.append("── Ações Automatizadas Disparadas ──")
+        for acao in acoes_auto:
+            linhas_resumo.append(f"  {acao}")
+
+    return {
+        "detalhes": detalhes,
+        "nivel_geral": nivel_geral,
+        "resumo_texto": "\n".join(linhas_resumo),
+        "acoes_auto": acoes_auto,
+        "criticos": criticos,
+        "em_alerta": em_alerta,
+    }

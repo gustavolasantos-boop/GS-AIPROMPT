@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Identificação da trilha — ALTEREM conforme a escolha do grupo
-TRILHA = "envirosat"  # "agrosat" | "envirosat" | "connectsat" | "mobilitysat"
+TRILHA = "agrosat"  # "agrosat" | "envirosat" | "connectsat" | "mobilitysat"
 
 client = Client(
     host="https://ollama.com",
@@ -68,38 +68,73 @@ def load_system_prompt():
 
 
 class MissionEngine:
-    """Motor de análise — vocês completam os métodos abaixo."""
+    """Motor de análise da missão."""
 
     def __init__(self):
         self.trilha = TRILHA
         self.system_prompt = load_system_prompt()
 
     def is_ready(self):
-        # Troquem para True quando analyze() estiver implementado
-        return False
+        return True
 
     def status_snapshot(self):
-        """Retorna texto resumindo o estado atual da telemetria."""
+        """Retorna um resumo atual da telemetria e dos alertas."""
 
-        # TODO: chamar telemetria.coletar() e formatar legivelmente
-        return "🛠️ status_snapshot() ainda não implementado."
+        from src.telemetria import coletar, formatar_resumo
+        from src.alertas import avaliar
 
-    def analyze(self, pergunta_usuario):
-        """Analisa a pergunta com base na telemetria + alertas + IA."""
-
-        # TODO (foco do trabalho):
-        # 1. Coletar dados via src.telemetria.coletar()
-        # 2. Avaliar alertas via src.alertas.avaliar(dados)
-        # 3. Montar prompt com dados + alertas + pergunta
-        # 4. Chamar llm(prompt, system=self.system_prompt)
-        # 5. Retornar a resposta
+        dados = coletar()
+        relatorio = avaliar(dados)
 
         return (
-            "🛠️ Implementação pendente.\n\n"
-            "Olá! A interface CLI está funcionando, mas a lógica\n"
-            "de análise ainda não foi conectada. O grupo precisa:\n\n"
-            "1. Completar src/telemetria.py\n"
-            "2. Completar src/alertas.py\n"
-            "3. Escrever o system prompt em prompts/system_prompt.md\n"
-            "4. Sobrescrever analyze() em src/engine.py"
+            formatar_resumo(dados)
+            + "\n\n"
+            + relatorio["resumo_texto"]
         )
+
+    def analyze(self, pergunta_usuario):
+        """Analisa a missão usando telemetria + regras Python + IA."""
+
+        from src.telemetria import coletar, formatar_resumo
+        from src.alertas import avaliar
+
+        dados = coletar()
+        relatorio = avaliar(dados)
+
+        prompt = f"""
+PERGUNTA DO OPERADOR:
+{pergunta_usuario}
+
+DADOS DE TELEMETRIA:
+{formatar_resumo(dados)}
+
+ANÁLISE AUTOMÁTICA:
+{relatorio["resumo_texto"]}
+
+NÍVEL GERAL DA MISSÃO:
+{relatorio["nivel_geral"]}
+
+ALERTAS CRÍTICOS:
+{relatorio["criticos"]}
+
+ALERTAS MODERADOS:
+{relatorio["em_alerta"]}
+
+AÇÕES AUTOMÁTICAS EXECUTADAS:
+{relatorio["acoes_auto"]}
+
+Explique:
+
+1. O estado técnico do satélite AgroSat.
+2. Os riscos operacionais identificados.
+3. O impacto para produtores rurais e seguradoras agrícolas.
+4. Quais ações devem ser tomadas pela equipe de missão.
+5. Use linguagem profissional e objetiva.
+"""
+
+        return llm(
+            prompt=prompt,
+            system=self.system_prompt,
+            temperature=0.3
+        )
+   
