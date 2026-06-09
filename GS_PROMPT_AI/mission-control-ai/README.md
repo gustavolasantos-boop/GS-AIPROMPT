@@ -118,7 +118,10 @@ python main.py
 
 ![Análise](assets/screenshot_análise.png)
 
----
+### Exemplo de Alerta
+
+![Alerta](assets/screenshot_alerta.png)
+--- 
 
 ## System Prompt
 
