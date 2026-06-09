@@ -22,6 +22,48 @@ O sistema foi desenvolvido para auxiliar operadores responsáveis pelo monitoram
 
 ---
 
+## Impacto e Modelo de Negócio
+
+### 1. Qual problema real terrestre esta missão resolve?
+
+O AgroSat busca resolver a dificuldade de monitoramento contínuo e em larga escala de áreas agrícolas. Atualmente, produtores rurais dependem de inspeções presenciais, que possuem alto custo e cobertura limitada. Com imagens multiespectrais e análise por IA, é possível identificar precocemente problemas como estresse hídrico, pragas, doenças e falhas no desenvolvimento das lavouras, permitindo ações corretivas mais rápidas e eficientes.
+
+### 2. Quem paga pela solução?
+
+O modelo proposto é híbrido.
+
+* Setor público: órgãos governamentais, institutos de pesquisa e monitoramento ambiental podem utilizar os dados para planejamento agrícola e segurança alimentar.
+* Setor privado: cooperativas agrícolas, seguradoras rurais, consultorias agronômicas e grandes produtores podem contratar acesso às análises e relatórios gerados pelo sistema.
+
+### 3. Métrica de impacto
+
+Considerando um satélite operando com disponibilidade próxima de 100% durante um ano:
+
+* Monitoramento de milhares de hectares de áreas agrícolas.
+* Identificação antecipada de problemas que podem reduzir perdas de produtividade.
+* Maior eficiência no uso de água e fertilizantes.
+* Apoio à tomada de decisão de produtores e cooperativas.
+* Geração contínua de dados para planejamento agrícola regional.
+
+Esses benefícios contribuem para o aumento da produtividade, redução de desperdícios e melhoria da sustentabilidade no agronegócio.
+
+### 4. Modelo de negócio
+
+O modelo de negócio proposto é baseado em Dados como Serviço (Data as a Service - DaaS).
+
+Os clientes contratam acesso às informações produzidas pelo satélite e às análises geradas pela Inteligência Artificial por meio de assinaturas periódicas.
+
+Possíveis produtos oferecidos:
+
+* Relatórios agrícolas automatizados.
+* Monitoramento de safras em tempo real.
+* Alertas de anomalias em lavouras.
+* Indicadores de saúde vegetal baseados em NDVI.
+* Painéis de acompanhamento para cooperativas e seguradoras.
+
+Esse modelo permite escalabilidade, atualização contínua dos dados e geração recorrente de receita.
+
+
 ## Tecnologias utilizadas
 
 * Python 3.13
