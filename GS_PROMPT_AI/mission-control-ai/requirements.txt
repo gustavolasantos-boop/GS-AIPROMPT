@@ -1,0 +1,8 @@
+# Dependências mínimas — fixem as versões para reprodutibilidade
+ollama =0.4.7
+python-dotenv =1.0.1
+# Opcional, dependendo do que vocês implementarem:
+# rich =13.9.4 (terminal bonito)
+# pandas =2.2.3 (manipulação de dados)
+# matplotlib =3.9.2 (gráficos)
+
